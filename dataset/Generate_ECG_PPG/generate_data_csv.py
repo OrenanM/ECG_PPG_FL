@@ -68,7 +68,7 @@ def generate_dataset_csv(size_win=80, hold_size=0, type_signal=' PLETH', save=Fa
     df_ecg = create_dataset(path_signals, size_win=size_win, type_signal=type_signal, hold_size=hold_size)
 
     # Definir a proporção de dados para teste
-    test_per = 0.8
+    test_per = 0.2
 
     # Dividir os dados em treino e teste
     signal_train, signal_test = train_test_split(df_ecg.values, test_size=test_per, random_state=42)

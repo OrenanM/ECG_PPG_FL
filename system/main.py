@@ -106,10 +106,10 @@ def run(args):
         elif model_str == "Bio_CNN":
             if "ECG" == args.dataset:
                 args.model = BioCNN(num_classes=args.num_classes).to(args.device)
-            elif "PPG" in args.dataset:
+            elif "PPG" == args.dataset:
                 args.model = BioCNN(num_classes=args.num_classes).to(args.device)
-            elif "ECG_PPG" in args.dataset:
-                args.model = BioCNN(2, num_classes=args.num_classes).to(args.device)
+            elif "ECG_PPG" == args.dataset:
+                args.model = BioCNN(in_channels=2, num_classes=args.num_classes).to(args.device)
             elif "Fusion" in args.dataset:
                 args.model = MultiStreamBioCNN(num_classes=args.num_classes).to(args.device)
 
@@ -215,7 +215,6 @@ def run(args):
 
         # select algorithm
         if args.algorithm == "FedAvg":
-            print('aqui')
             args.head = copy.deepcopy(args.model.fc)
             args.model.fc = nn.Identity()
             args.model = BaseHeadSplit(args.model, args.head)

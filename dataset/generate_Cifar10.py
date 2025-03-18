@@ -57,6 +57,12 @@ def generate_dataset(dir_path, num_clients, niid, balance, partition):
     testloader = torch.utils.data.DataLoader(
         testset, batch_size=len(testset.data), shuffle=False)
 
+    for t, _ in trainloader:
+        print(t.shape)
+        break
+    for t, _ in trainset:
+        print(t.shape)
+        break
     for _, train_data in enumerate(trainloader, 0):
         trainset.data, trainset.targets = train_data
     for _, test_data in enumerate(testloader, 0):

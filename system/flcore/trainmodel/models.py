@@ -154,7 +154,10 @@ class MultiStreamBioCNN(nn.Module):
         )
         self.fc = nn.Linear(512, num_classes)
     
-    def forward(self, ecg, emg):
+    def forward(self, ecg_emg):
+        ecg = ecg_emg[:,0,:,:].unsqueeze(1)
+        emg = ecg_emg[:,1,:,:].unsqueeze(1)
+
         ecg_features = self.ecg_conv(ecg)
         emg_features = self.emg_conv(emg)
         

@@ -12,7 +12,7 @@ from scipy.signal import stft
 
 random.seed(1)
 np.random.seed(1)
-num_clients = 30
+num_clients = 40
 dir_path = "PPG_ECG/"
 
 class CustomDatasetMultiStream(Dataset):
@@ -32,9 +32,8 @@ class CustomDatasetMultiStream(Dataset):
         
         self.data_ppg = torch.abs(torch.tensor(Zxx_ppg))  # Magnitude (escala de cinza)
         self.labels_ppg = torch.tensor(df_dataset_ppg['label'].values, dtype=torch.long)
-
-        print(self.labels_ecg[:50])
-        print(self.labels_ppg[:50])
+        self.data = torch.stack([self.data_ecg, self.data_ppg], dim=1)
+        self.labels = self.labels_ecg
 
     def __len__(self):
         return len(self.data_ecg)
@@ -141,6 +140,8 @@ if __name__ == "__main__":
         type_signal = ' PLETH'
     elif type_signal == "PPG":
         type_signal = ' II'
+    elif type_signal == 'Fusion':
+        type_signal = 'ECG_PPG'
     
     generate_dataset(dir_path, num_clients, niid, balance, partition, 
                      size_win, hold_size, type_signal)
