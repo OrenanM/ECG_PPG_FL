@@ -26,6 +26,7 @@ import numpy as np
 import torchvision
 import logging
 
+from flcore.servers.serveravgbio import FedAvgBio
 from flcore.servers.serveravg import FedAvg
 from flcore.servers.serverpFedMe import pFedMe
 from flcore.servers.serverperavg import PerAvg
@@ -219,7 +220,11 @@ def run(args):
             args.model.fc = nn.Identity()
             args.model = BaseHeadSplit(args.model, args.head)
             server = FedAvg(args, i)
-
+        elif args.algorithm == "FedAvgBio":
+            args.head = copy.deepcopy(args.model.fc)
+            args.model.fc = nn.Identity()
+            args.model = BaseHeadSplit(args.model, args.head)
+            server = FedAvgBio(args, i)
         elif args.algorithm == "Local":
             server = Local(args, i)
 
@@ -434,7 +439,7 @@ if __name__ == "__main__":
                         help="For auto_break")
     parser.add_argument('-ls', "--local_epochs", type=int, default=1, 
                         help="Multiple update steps in one local epoch.")
-    parser.add_argument('-algo', "--algorithm", type=str, default="FedAvg")
+    parser.add_argument('-algo', "--algorithm", type=str, default="FedAvgBio")
     parser.add_argument('-jr', "--join_ratio", type=float, default=1.0,
                         help="Ratio of clients per round")
     parser.add_argument('-rjr', "--random_join_ratio", type=bool, default=False,

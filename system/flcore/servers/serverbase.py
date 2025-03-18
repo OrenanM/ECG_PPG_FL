@@ -153,7 +153,7 @@ class Server(object):
 
     def aggregate_parameters(self):
         assert (len(self.uploaded_models) > 0)
-
+        print(self.global_model)
         self.global_model = copy.deepcopy(self.uploaded_models[0])
         for param in self.global_model.parameters():
             param.data.zero_()
