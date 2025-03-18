@@ -38,6 +38,136 @@ class BaseHeadSplit(nn.Module):
 
 ###########################################################
 
+class BioCNN(nn.Module):
+    def __init__(self, in_channels=1, num_classes=53):  # Ajuste num_classes conforme necessário
+        super(BioCNN, self).__init__()
+        
+        # Stream 1: ECG Spectrogram or PPG Spectrogram
+        self.ecg_conv = nn.Sequential(
+            nn.Conv2d(in_channels, 8, kernel_size=3, padding=1),  # (Entrada Escala de cinza)
+            nn.BatchNorm2d(8),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(8, 16, kernel_size=3, padding=1),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
+
+        # Fully Connected Layers
+        self.fc1 = nn.Sequential(
+            nn.Linear(128, 512),
+            nn.ReLU()
+        )
+        self.fc = nn.Linear(512, num_classes)
+    
+    def forward(self, signal):
+        signal_features = self.ecg_conv(signal)
+        signal_features = torch.flatten(signal_features, start_dim=1)
+        
+        output = self.fc1(signal_features)
+        output = self.fc(output)
+        return output
+
+###########################################################
+
+class MultiStreamBioCNN(nn.Module):
+    def __init__(self, num_classes=53):  # Ajuste num_classes conforme necessário
+        super(MultiStreamBioCNN, self).__init__()
+        
+        # Stream 1: ECG Spectrogram
+        self.ecg_conv = nn.Sequential(
+            nn.Conv2d(1, 8, kernel_size=3, padding=1),  # (Entrada Escala de cinza)
+            nn.BatchNorm2d(8),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(8, 16, kernel_size=3, padding=1),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
+        
+        # Stream 2: PPG Spectrogram
+        self.emg_conv = nn.Sequential(
+            nn.Conv2d(1, 8, kernel_size=3, padding=1),  # (Entrada RGB)
+            nn.BatchNorm2d(8),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(8, 16, kernel_size=3, padding=1),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+            
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
+        
+        # Fully Connected Layers
+        self.fc1 = nn.Sequential(
+            nn.Linear(256, 512),
+            nn.ReLU()
+        )
+        self.fc = nn.Linear(512, num_classes)
+    
+    def forward(self, ecg, emg):
+        ecg_features = self.ecg_conv(ecg)
+        emg_features = self.emg_conv(emg)
+        
+        ecg_features = torch.flatten(ecg_features, start_dim=1)
+        emg_features = torch.flatten(emg_features, start_dim=1)
+        
+        combined_features = torch.cat((ecg_features, emg_features), dim=1)
+        output = self.fc1(combined_features)
+        output = self.fc(output)
+        return output
+
+###########################################################
+
 # https://github.com/jindongwang/Deep-learning-activity-recognition/blob/master/pytorch/network.py
 class HARCNN(nn.Module):
     def __init__(self, in_channels=9, dim_hidden=64*26, num_classes=6, conv_kernel_size=(1, 9), pool_kernel_size=(1, 2)):
@@ -411,6 +541,29 @@ class LeNet(nn.Module):
 
 # ====================================================================================================================
 
+class LSTMClassifier(nn.Module):
+    def __init__(self, input_dim=80, hidden_dim=128, num_layers=10, num_classes=53, dropout=0.2):
+        super(LSTMClassifier, self).__init__()
+
+        self.lstm = nn.LSTM(input_size=input_dim, 
+                            hidden_size=hidden_dim, 
+                            num_layers=num_layers, 
+                            batch_first=True, 
+                            dropout=dropout)
+
+        self.fc = nn.Linear(hidden_dim, num_classes)  # Saída com 'num_classes' neurônios
+
+    def forward(self, x):
+        out, (hidden, cell) = self.lstm(x)  # (batch_size, seq_length, hidden_dim)
+        if out.dim() == 3:
+            out = out[:, -1, :]  # Pega a última saída da sequência
+        elif out.dim() == 2:
+            out = out[:, :]  # Mantém o formato correto se já estiver 2D
+
+        out = self.fc(out)   # Camada linear para classificação
+        return F.log_softmax(out, dim=1)  # Softmax logarítmico para classificação
+    
+# ====================================================================================================================
 class LSTMNet(nn.Module):
     def __init__(self, hidden_dim, num_layers=2, bidirectional=False, dropout=0.2, 
                 padding_idx=0, vocab_size=98635, num_classes=10):

@@ -29,7 +29,7 @@ train_ratio = 0.75 # merge original training set and test set, then split it man
 alpha = 0.1 # for Dirichlet distribution. 100 for exdir
 
 def check(config_path, train_path, test_path, num_clients, niid=False, 
-        balance=True, partition=None):
+        balance=True, partition=None, size_win=None, hold_size=None, type_signal=None):
     # check existing dataset
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
@@ -40,8 +40,15 @@ def check(config_path, train_path, test_path, num_clients, niid=False,
             config['partition'] == partition and \
             config['alpha'] == alpha and \
             config['batch_size'] == batch_size:
-            print("\nDataset already generated.\n")
-            return True
+            if type_signal: # verificações adicionais para sinais biologicos
+                if config['type_signal'] == type_signal and \
+                config['size_win'] == size_win and \
+                config['hold_size'] == hold_size:
+                    print("\nDataset already generated.\n")
+                    return True
+            else:
+                print("\nDataset already generated.\n")
+                return True
 
     dir_path = os.path.dirname(train_path)
     if not os.path.exists(dir_path):
@@ -248,7 +255,8 @@ def split_data(X, y):
     return train_data, test_data
 
 def save_file(config_path, train_path, test_path, train_data, test_data, num_clients, 
-                num_classes, statistic, niid=False, balance=True, partition=None):
+                num_classes, statistic, niid=False, balance=True, partition=None,
+                size_win=None, hold_size=None, type_signal=None):
     config = {
         'num_clients': num_clients, 
         'num_classes': num_classes, 
@@ -259,6 +267,11 @@ def save_file(config_path, train_path, test_path, train_data, test_data, num_cli
         'alpha': alpha, 
         'batch_size': batch_size, 
     }
+
+    if type_signal: # adiciona os valores de configuração para biosinais
+        config['size_win'] = size_win
+        config['hold_size'] = hold_size
+        config['type_signal'] = type_signal
 
     # gc.collect()
     print("Saving to disk.\n")

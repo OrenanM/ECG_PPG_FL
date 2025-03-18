@@ -72,6 +72,7 @@ class Client(object):
         if batch_size == None:
             batch_size = self.batch_size
         train_data = read_client_data(self.dataset, self.id, is_train=True)
+
         return DataLoader(train_data, batch_size, drop_last=True, shuffle=True)
 
     def load_test_data(self, batch_size=None):
@@ -112,8 +113,7 @@ class Client(object):
                     x = x.to(self.device)
                 y = y.to(self.device)
                 output = self.model(x)
-
-                test_acc += (torch.sum(torch.argmax(output, dim=1) == y)).item()
+                test_acc += (torch.sum(torch.argmax(output, 1) == y)).item()
                 test_num += y.shape[0]
 
                 y_prob.append(output.detach().cpu().numpy())
@@ -131,7 +131,7 @@ class Client(object):
         y_prob = np.concatenate(y_prob, axis=0)
         y_true = np.concatenate(y_true, axis=0)
 
-        auc = metrics.roc_auc_score(y_true, y_prob, average='micro')
+        auc = 0
         
         return test_acc, test_num, auc
 

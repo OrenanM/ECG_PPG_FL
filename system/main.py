@@ -103,6 +103,15 @@ def run(args):
                 args.model = Mclr_Logistic(3*32*32, num_classes=args.num_classes).to(args.device)
             else:
                 args.model = Mclr_Logistic(60, num_classes=args.num_classes).to(args.device)
+        elif model_str == "Bio_CNN":
+            if "ECG" == args.dataset:
+                args.model = BioCNN(num_classes=args.num_classes).to(args.device)
+            elif "PPG" in args.dataset:
+                args.model = BioCNN(num_classes=args.num_classes).to(args.device)
+            elif "ECG_PPG" in args.dataset:
+                args.model = BioCNN(2, num_classes=args.num_classes).to(args.device)
+            elif "Fusion" in args.dataset:
+                args.model = MultiStreamBioCNN(num_classes=args.num_classes).to(args.device)
 
         elif model_str == "CNN": # non-convex
             if "MNIST" in args.dataset:
@@ -114,6 +123,12 @@ def run(args):
                 # args.model = CifarNet(num_classes=args.num_classes).to(args.device)
             elif "Digit5" in args.dataset:
                 args.model = Digit5CNN().to(args.device)
+            elif "ECG" in args.dataset:
+                pass
+            elif "PPG" in args.dataset:
+                pass
+            elif "PPG_ECG" in args.dataset:
+                pass
             else:
                 args.model = FedAvgCNN(in_features=3, num_classes=args.num_classes, dim=10816).to(args.device)
 
@@ -163,7 +178,7 @@ def run(args):
             # args.model.fc = nn.Linear(feature_dim, args.num_classes).to(args.device)
             
         elif model_str == "LSTM":
-            args.model = LSTMNet(hidden_dim=args.feature_dim, vocab_size=args.vocab_size, num_classes=args.num_classes).to(args.device)
+            args.model = LSTMClassifier(hidden_dim=args.feature_dim, num_classes=args.num_classes).to(args.device)
 
         elif model_str == "BiLSTM":
             args.model = BiLSTM_TextClassification(input_size=args.vocab_size, hidden_size=args.feature_dim, 
@@ -200,6 +215,7 @@ def run(args):
 
         # select algorithm
         if args.algorithm == "FedAvg":
+            print('aqui')
             args.head = copy.deepcopy(args.model.fc)
             args.model.fc = nn.Identity()
             args.model = BaseHeadSplit(args.model, args.head)
@@ -406,9 +422,9 @@ if __name__ == "__main__":
     parser.add_argument('-dev', "--device", type=str, default="cuda",
                         choices=["cpu", "cuda"])
     parser.add_argument('-did', "--device_id", type=str, default="0")
-    parser.add_argument('-data', "--dataset", type=str, default="MNIST")
-    parser.add_argument('-ncl', "--num_classes", type=int, default=10)
-    parser.add_argument('-m', "--model", type=str, default="CNN")
+    parser.add_argument('-data', "--dataset", type=str, default="ECG")
+    parser.add_argument('-ncl', "--num_classes", type=int, default=53)
+    parser.add_argument('-m', "--model", type=str, default="Bio_CNN")
     parser.add_argument('-lbs', "--batch_size", type=int, default=10)
     parser.add_argument('-lr', "--local_learning_rate", type=float, default=0.005,
                         help="Local learning rate")
@@ -439,7 +455,7 @@ if __name__ == "__main__":
     parser.add_argument('-bnpc', "--batch_num_per_client", type=int, default=2)
     parser.add_argument('-nnc', "--num_new_clients", type=int, default=0)
     parser.add_argument('-ften', "--fine_tuning_epoch_new", type=int, default=0)
-    parser.add_argument('-fd', "--feature_dim", type=int, default=512)
+    parser.add_argument('-fd', "--feature_dim", type=int, default=80)
     parser.add_argument('-vs', "--vocab_size", type=int, default=32000, 
                         help="Set this for text tasks. 80 for Shakespeare. 32000 for AG_News and SogouNews.")
     parser.add_argument('-ml', "--max_len", type=int, default=200)
