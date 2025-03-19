@@ -20,11 +20,13 @@ from flcore.clients.clientavgbio import clientAVGBio
 from flcore.servers.serverbase import Server
 from threading import Thread
 import torch
+import copy
 
 
 class FedAvgBio(Server):
     def __init__(self, args, times):
         super().__init__(args, times)
+        self.global_model = copy.deepcopy(args.model.head)
 
         # select slow clients
         self.set_slow_clients()

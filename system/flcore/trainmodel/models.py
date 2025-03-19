@@ -71,18 +71,17 @@ class BioCNN(nn.Module):
         )
 
         # Fully Connected Layers
-        self.fc1 = nn.Sequential(
+        self.fc = nn.Sequential(
             nn.Linear(128, 512),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.Linear(512, num_classes)
         )
-        self.fc = nn.Linear(512, num_classes)
     
     def forward(self, signal):
         signal_features = self.ecg_conv(signal)
         signal_features = torch.flatten(signal_features, start_dim=1)
         
-        output = self.fc1(signal_features)
-        output = self.fc(output)
+        output = self.fc(signal_features)
         return output
 
 ###########################################################
@@ -148,11 +147,11 @@ class MultiStreamBioCNN(nn.Module):
         )
         
         # Fully Connected Layers
-        self.fc1 = nn.Sequential(
+        self.fc = nn.Sequential(
             nn.Linear(256, 512),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.Linear(512, num_classes)
         )
-        self.fc = nn.Linear(512, num_classes)
     
     def forward(self, ecg_emg):
         ecg = ecg_emg[:,0,:,:].unsqueeze(1)
@@ -165,8 +164,7 @@ class MultiStreamBioCNN(nn.Module):
         emg_features = torch.flatten(emg_features, start_dim=1)
         
         combined_features = torch.cat((ecg_features, emg_features), dim=1)
-        output = self.fc1(combined_features)
-        output = self.fc(output)
+        output = self.fc(combined_features)
         return output
 
 ###########################################################
