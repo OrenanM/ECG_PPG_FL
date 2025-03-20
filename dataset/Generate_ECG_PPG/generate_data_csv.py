@@ -18,7 +18,7 @@ def create_windows(arr, size_win, hold=0):
     
     return np.array(windows)
 
-def create_dataset_signal(path_signals, index, size_win=0, hold_size = 0, type_signal=' PLETH'):
+def create_dataset_signal(path_signals, index, size_win=0, hold_size = 0, type_signal=' II'):
     # carrega o csv
     df_signal = pd.read_csv(path_signals[index])
     
@@ -32,13 +32,13 @@ def create_dataset_signal(path_signals, index, size_win=0, hold_size = 0, type_s
 
     else:
         # sem janelamento
-        df_signal = df_signal[[' PLETH']].T
+        df_signal = df_signal[[' II']].T
 
     df_signal['label'] = index + 1 # label
         
     return df_signal
 
-def create_dataset(path_signals, size_win=80, hold_size=0, type_signal=' PLETH'):
+def create_dataset(path_signals, size_win=80, hold_size=0, type_signal=' II'):
     n_register = len(path_signals) # numero de dados
     df = pd.DataFrame() # armazena todos os dasets
 
@@ -51,7 +51,7 @@ def create_dataset(path_signals, size_win=80, hold_size=0, type_signal=' PLETH')
 
     return df
 
-def generate_dataset_csv(size_win=80, hold_size=0, type_signal=' PLETH', save=False, root=None):
+def generate_dataset_csv(size_win=80, hold_size=0, type_signal=' II', save=False, root=None):
     # diretorio dos dados
     dir = 'bidmc-ppg-and-respiration-dataset-1.0.0/bidmc_csv'
     if root:
@@ -83,9 +83,9 @@ def generate_dataset_csv(size_win=80, hold_size=0, type_signal=' PLETH', save=Fa
     # salva o dataset
     if save:
         if type_signal == " PLETH":
-            type_signal = 'ECG'
-        elif type_signal == " II":
             type_signal = 'PPG'
+        elif type_signal == " II":
+            type_signal = 'ECG'
         df_sgn_train.to_csv(f'data/{type_signal}_train.csv', index=False)
         df_sgn_test.to_csv(f'data/{type_signal}_test.csv', index=False)
 
@@ -94,7 +94,7 @@ def generate_dataset_csv(size_win=80, hold_size=0, type_signal=' PLETH', save=Fa
 if __name__ == '__main__':
     size_win = int(sys.argv[1]) if sys.argv[1] != None else 80
     hold_size = int(sys.argv[2]) if sys.argv[2] != None else 0
-    type_signal = sys.argv[3] if sys.argv[3] != None else ' PLETH'
+    type_signal = sys.argv[3] if sys.argv[3] != None else ' II'
 
     if type_signal == "ECG":
         type_signal = ' PLETH'

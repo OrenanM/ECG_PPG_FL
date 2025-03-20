@@ -137,9 +137,9 @@ if __name__ == "__main__":
     dir_path = type_signal + '/'
 
     if type_signal == "ECG":
-        type_signal = ' PLETH'
-    elif type_signal == "PPG":
         type_signal = ' II'
+    elif type_signal == "PPG":
+        type_signal = ' PLETH'
     elif type_signal == 'Fusion':
         type_signal = 'ECG_PPG'
     
