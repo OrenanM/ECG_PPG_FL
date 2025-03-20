@@ -27,7 +27,6 @@ class clientAVGBio(Client):
         super().__init__(args, id, train_samples, test_samples, **kwargs)
 
     def get_model(self):
-        """Getter para o atributo nome"""
         return self.model.head
     
     def set_parameters(self, model):
