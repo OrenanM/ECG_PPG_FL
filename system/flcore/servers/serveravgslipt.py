@@ -16,21 +16,21 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import time
-from flcore.clients.clientavgbio import clientAVGBio
+from flcore.clients.clientavgslipt import clientAVGSlipt
 from flcore.servers.serverbase import Server
 from threading import Thread
 import torch
 import copy
 
 
-class FedAvgBio(Server):
+class FedAvgSlipt(Server):
     def __init__(self, args, times):
         super().__init__(args, times)
         self.global_model = copy.deepcopy(args.model.head)
 
         # select slow clients
         self.set_slow_clients()
-        self.set_clients(clientAVGBio)
+        self.set_clients(clientAVGSlipt)
 
         print(f"\nJoin ratio / total clients: {self.join_ratio} / {self.num_clients}")
         print("Finished creating server and clients.")
