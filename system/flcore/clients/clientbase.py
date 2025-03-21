@@ -24,6 +24,7 @@ from torch.utils.data import DataLoader
 from sklearn.preprocessing import label_binarize
 from sklearn import metrics
 from utils.data_utils import read_client_data
+from sklearn.metrics import confusion_matrix, f1_score, roc_auc_score
 
 
 class Client(object):
@@ -127,15 +128,29 @@ class Client(object):
                     lb = lb[:, :2]
                 y_true.append(lb)
 
-        # self.model.cpu()
-        # self.save_model(self.model, 'model')
-
         y_prob = np.concatenate(y_prob, axis=0)
         y_true = np.concatenate(y_true, axis=0)
 
-        auc = metrics.roc_auc_score(y_true, y_prob, average='micro')
-        
-        return test_acc, test_num, auc
+        # Calcular AUC
+        auc = roc_auc_score(y_true, y_prob, average='micro')
+
+        # Calcular a matriz de confusão (apenas para a classe positiva em problemas binários)
+        y_pred = np.argmax(y_prob, axis=1)
+        cm = confusion_matrix(np.argmax(y_true, axis=1), y_pred)
+
+        # Inicializando as variáveis
+        tn, fp, fn, tp = None, None, None, None
+
+        # Para problemas multiclasses, calcular TP, FP, FN, TN para cada classe
+        # Para cada classe, calcular TP, FP, FN, TN
+        for i in range(cm.shape[0]):
+            # Para cada classe i, extrair os valores de TP, FP, FN, TN
+            tp = cm[i, i]
+            fn = cm[i, :].sum() - tp
+            fp = cm[:, i].sum() - tp
+            tn = cm.sum() - (tp + fn + fp)
+
+        return test_acc, test_num, auc, tn, fp, fn, tp
 
     def train_metrics(self):
         trainloader = self.load_train_data()

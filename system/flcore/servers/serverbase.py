@@ -63,6 +63,8 @@ class Server(object):
         self.rs_test_acc = []
         self.rs_test_auc = []
         self.rs_train_loss = []
+        self.rs_test_frr = []
+        self.rs_test_fpr = []
 
         self.times = times
         self.eval_gap = args.eval_gap
@@ -197,8 +199,10 @@ class Server(object):
             with h5py.File(file_path, 'w') as hf:
                 hf.create_dataset('rs_test_acc', data=self.rs_test_acc)
                 hf.create_dataset('rs_test_auc', data=self.rs_test_auc)
-                hf.create_dataset('rs_train_loss', data=self.rs_train_loss)
+                hf.create_dataset('rs_test_frr', data=self.rs_test_frr)
+                hf.create_dataset('rs_test_fpr', data=self.rs_test_fpr)
                 hf.create_dataset('rs_time', data=self.Budget)
+                hf.create_dataset('rs_train_loss', data=self.rs_train_loss)
 
     def save_item(self, item, item_name):
         if not os.path.exists(self.save_folder_name):
@@ -216,15 +220,20 @@ class Server(object):
         num_samples = []
         tot_correct = []
         tot_auc = []
+        tot_tn, tot_fp, tot_fn, tot_tp = [], [], [], []
         for c in self.clients:
-            ct, ns, auc = c.test_metrics()
+            ct, ns, auc, tn, fp, fn, tp = c.test_metrics()
             tot_correct.append(ct*1.0)
             tot_auc.append(auc*ns)
             num_samples.append(ns)
+            tot_tn.append(tn)
+            tot_fn.append(fn)
+            tot_tp.append(tp)
+            tot_fp.append(fp)
 
         ids = [c.id for c in self.clients]
 
-        return ids, num_samples, tot_correct, tot_auc
+        return ids, num_samples, tot_correct, tot_auc, tot_tn, tot_fp, tot_fn, tot_tp
 
     def train_metrics(self):
         if self.eval_new_clients and self.num_new_clients > 0:
@@ -242,12 +251,20 @@ class Server(object):
         return ids, num_samples, losses
 
     # evaluate selected clients
-    def evaluate(self, acc=None, loss=None):
+    def evaluate(self, acc=None, loss=None, fpr=None, frr=None, auc=None):
         stats = self.test_metrics()
         stats_train = self.train_metrics()
 
         test_acc = sum(stats[2])*1.0 / sum(stats[1])
         test_auc = sum(stats[3])*1.0 / sum(stats[1])
+
+        # tot_tn - 4, tot_fp - 5, tot_fn - 6, tot_tp - 7
+
+        #FPR=FP/(TN+FP)
+        test_fpr = sum(stats[5])/(sum(stats[5])+sum(stats[4]))
+        #FRR=FN/(TP+FN​)
+        test_frr = sum(stats[6])/(sum(stats[6])+sum(stats[7]))
+
         train_loss = sum(stats_train[2])*1.0 / sum(stats_train[1])
         accs = [a / n for a, n in zip(stats[2], stats[1])]
         aucs = [a / n for a, n in zip(stats[3], stats[1])]
@@ -262,9 +279,26 @@ class Server(object):
         else:
             loss.append(train_loss)
 
+        if frr == None:
+            self.rs_test_fpr.append(test_fpr)
+        else:
+            fpr.append(test_fpr)
+
+        if fpr == None:
+            self.rs_test_frr.append(test_frr)
+        else:
+            frr.append(test_frr)
+
+        if auc == None:
+            self.rs_test_auc.append(aucs)
+        else:
+            auc.append(test_frr)
+
         print("Averaged Train Loss: {:.4f}".format(train_loss))
         print("Averaged Test Accurancy: {:.4f}".format(test_acc))
         print("Averaged Test AUC: {:.4f}".format(test_auc))
+        print("Averaged Test FPR: {:.4f}".format(test_fpr))
+        print("Averaged Test FRR: {:.4f}".format(test_frr))
         # self.print_(test_acc, train_acc, train_loss)
         print("Std Test Accurancy: {:.4f}".format(np.std(accs)))
         print("Std Test AUC: {:.4f}".format(np.std(aucs)))
